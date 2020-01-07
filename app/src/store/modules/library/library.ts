@@ -1,7 +1,7 @@
-import {createBook, fetchAllBooks, removeBook, updateBook} from '@/api/api';
-import store from '@/store';
-import {Book, Order, Sort} from '@/store/modules/library/libraryInterface';
 import {Action, getModule, Module, Mutation, VuexModule} from 'vuex-module-decorators';
+import {createBook, fetchAllBooks, removeBook, updateBook} from '@/api/api';
+import {Book, Order, Sort} from '@/store/modules/library/libraryInterface';
+import store from '@/store';
 
 @Module({
   namespaced: true,
@@ -10,35 +10,31 @@ import {Action, getModule, Module, Mutation, VuexModule} from 'vuex-module-decor
   store
 })
 class LibraryModuleInternal extends VuexModule {
-  stateAllBooks: Book[] | null = null;
-  stateFilteredBooks: Book[] | null = null;
+  stateAllBooks: Book[] = [];
+  stateSearch: string = '';
   stateSort: Sort = Sort.ID;
-  stateOrder: Order = 'DESC';
+  stateOrder: Order = Order.DESC;
+
+  @Mutation
+  setSearch(value: string) {
+    this.stateSearch = value;
+  }
 
   @Mutation
   setBooks(books: Book[] | null) {
     if (!books) {
       return;
     }
-    if (!this.stateAllBooks) {
-      this.stateAllBooks = books;
-    }
-    this.stateFilteredBooks = books;
+    this.stateAllBooks = books;
   }
 
   @Mutation
   sortBooks(sort: Sort) {
-    if (!this.stateAllBooks) {
-      return;
-    }
     this.stateSort = sort;
   }
 
   @Mutation
   orderBooks(order: Order) {
-    if (!this.stateAllBooks) {
-      return;
-    }
     this.stateOrder = order;
   }
 
@@ -50,7 +46,6 @@ class LibraryModuleInternal extends VuexModule {
     if (this.stateAllBooks) {
       this.stateAllBooks.push(book);
     }
-    this.stateFilteredBooks = this.stateAllBooks;
   }
 
   @Mutation
@@ -58,13 +53,10 @@ class LibraryModuleInternal extends VuexModule {
     if (!book) {
       return;
     }
-    const editFn = (books: Book[]) => books.map(item => item.id === book.id ? book : item);
+    const editFn = (books: Book[]) => books.map((item) => item.id === book.id ? book : item);
     if (book.id) {
       if (this.stateAllBooks) {
         this.stateAllBooks = editFn(this.stateAllBooks);
-      }
-      if (this.stateFilteredBooks) {
-        this.stateFilteredBooks = editFn(this.stateFilteredBooks);
       }
     }
   }
@@ -76,29 +68,18 @@ class LibraryModuleInternal extends VuexModule {
     }
     const deleteFn = (books: Book[]) => {
       const searchedBook = books.find(book => book.id === bookID);
-      searchedBook && books.splice(books.indexOf(searchedBook), 1);
+      if (searchedBook) {
+       books.splice(books.indexOf(searchedBook), 1);
+     }
     };
     if (this.stateAllBooks) {
       deleteFn(this.stateAllBooks);
     }
-    if (this.stateFilteredBooks) {
-      deleteFn(this.stateFilteredBooks);
-    }
   }
 
-  @Action({commit: 'setBooks', rawError: true})
+  @Action({commit: 'setSearch'})
   onSearchBooks(value: string) {
-    if (this.stateAllBooks) {
-      return this.stateAllBooks
-        .filter(book => Object.values(book)
-          .find(val => val && val.toString().toLowerCase().includes(value.toLowerCase())));
-    }
-    return null;
-  }
-
-  @Action({commit: 'setBooks'})
-  async onLoadBooks() {
-    return await fetchAllBooks();
+    return value;
   }
 
   @Action({commit: 'sortBooks'})
@@ -109,6 +90,11 @@ class LibraryModuleInternal extends VuexModule {
   @Action({commit: 'orderBooks'})
   onOrderBooks(order: Order) {
     return order;
+  }
+
+  @Action({commit: 'setBooks'})
+  async onLoadBooks() {
+    return await fetchAllBooks();
   }
 
   @Action({commit: 'addBook'})
@@ -134,13 +120,13 @@ class LibraryModuleInternal extends VuexModule {
     return this.stateOrder;
   }
 
-  get filteredBooks() {
-    if (!this.stateFilteredBooks) {
-      return [];
-    }
-    const allBooks = this.stateFilteredBooks;
+  get books() {
+    const searchVal = this.stateSearch.toLowerCase();
+    const allBooks = this.stateAllBooks
+        .filter((book) => Object.values(book)
+            .find((val) => val && val.toString().toLowerCase().includes(searchVal)));
     const sort = this.stateSort;
-    const orderByASC = this.stateOrder === 'ASC';
+    const orderByASC = this.stateOrder === Order.ASC;
     const sortFn = (a?: number | null, b?: number | null) => {
        const first = a || 0;
        const second = b || 0;

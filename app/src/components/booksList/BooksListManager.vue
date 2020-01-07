@@ -30,7 +30,7 @@
     statePages: number[] = [];
 
     get books() {
-      return LibraryModule.filteredBooks;
+      return LibraryModule.books;
     }
 
     get columnNames() {

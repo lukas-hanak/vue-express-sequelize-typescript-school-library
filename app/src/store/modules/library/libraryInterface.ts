@@ -13,7 +13,10 @@ export interface Book {
   updatedAt?: string;
 }
 
-export type Order = 'ASC' | 'DESC';
+export enum Order {
+  ASC = 'asc',
+  DESC = 'desc'
+}
 
 export enum Sort {
   ID = 'id',

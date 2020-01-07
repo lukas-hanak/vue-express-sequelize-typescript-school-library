@@ -89,11 +89,11 @@
     ];
     stateOrderList: NavbarItemsType = [
       {
-        key: 'ASC',
+        key: Order.ASC,
         name: 'Ascending',
       },
       {
-        key: 'DESC',
+        key: Order.DESC,
         name: 'Descending',
       }
     ];
